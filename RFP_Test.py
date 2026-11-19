@@ -16,19 +16,6 @@ warnings.filterwarnings("ignore")
 
 EVAL_SEED = 99
 
-# Alignment计算较慢，最多抽取3000条Trace
-MAX_EVAL_TRACES = 3000
-
-# 推荐False：直接在原始测试日志上评估
-#
-# True：
-# 删除模型训练阶段未保留的活动。
-# 只有当所有对比方法使用完全相同的活动集合时才公平。
-#
-# False：
-# 不删除测试活动，未见活动作为偏差参与评估。
-FILTER_TEST_ACTIVITIES = True
-
 random.seed(EVAL_SEED)
 
 
@@ -56,18 +43,8 @@ CFG_FILE = os.path.join(
     "train_config.json"
 )
 
-# =====================================================
-# 统一转换为EventLog
-# =====================================================
 
 def ensure_event_log(log):
-    """
-    将PM4Py读取结果统一转换成EventLog。
-
-    不同PM4Py版本的read_xes可能返回：
-    1. pandas.DataFrame
-    2. EventLog
-    """
 
     if isinstance(log, pd.DataFrame):
 
@@ -94,18 +71,6 @@ def ensure_event_log(log):
             "case:concept:name"
         ].nunique()
 
-        print(
-            "\nread_xes返回类型: pandas.DataFrame"
-        )
-
-        print(
-            f"DataFrame事件数: {event_count}"
-        )
-
-        print(
-            f"DataFrame Trace数: {trace_count}"
-        )
-
         event_log = (
             pm4py.convert_to_event_log(log)
         )
@@ -120,7 +85,6 @@ def ensure_event_log(log):
 
     else:
 
-        # 对其他兼容日志类型做一次转换尝试
         try:
 
             event_log = (
@@ -135,23 +99,9 @@ def ensure_event_log(log):
             ) from exc
 
     if not isinstance(event_log, EventLog):
-
-        # 某些版本转换结果可能是兼容日志对象，
-        # 最终显式封装为EventLog
         event_log = EventLog(
             list(event_log)
         )
-
-    if len(event_log) == 0:
-
-        raise ValueError(
-            "转换后的测试日志为空"
-        )
-
-    print(
-        f"转换后EventLog Trace数: "
-        f"{len(event_log)}"
-    )
 
     return event_log
 
@@ -176,85 +126,9 @@ def load_config():
 
     return cfg
 
-# =====================================================
-# 活动过滤
-# =====================================================
-
-def filter_test_log(
-        log,
-        keep_activities
-):
-    """
-    将测试日志投影到指定活动集合。
-
-    注意：
-    删除中间活动可能产生新的相邻关系。
-    只有所有对比方法使用相同活动集合时，
-    该评估方式才具有可比性。
-    """
-
-    df = pm4py.convert_to_dataframe(log)
-
-    required_columns = {
-        "case:concept:name",
-        "concept:name"
-    }
-
-    missing_columns = (
-        required_columns
-        - set(df.columns)
-    )
-
-    if missing_columns:
-
-        raise ValueError(
-            "测试日志缺少必要字段: "
-            f"{sorted(missing_columns)}"
-        )
-
-    before_trace = df[
-        "case:concept:name"
-    ].nunique()
-
-    before_event = len(df)
-
-    before_activities = set(
-        df["concept:name"].unique()
-    )
-
-    keep_activities = set(
-        keep_activities
-    )
-
-    removed_activities = sorted(
-        before_activities
-        - keep_activities
-    )
-
-    # 保存原始事件顺序
     df["_original_event_order"] = range(
         len(df)
     )
-
-    # 仅保留训练阶段允许的活动
-    df = df[
-        df["concept:name"].isin(
-            keep_activities
-        )
-    ].copy()
-
-    if df.empty:
-
-        raise ValueError(
-            "活动过滤后测试日志为空。"
-            "请检查keep_activities或关闭"
-            "FILTER_TEST_ACTIVITIES。"
-        )
-
-    # 保证同一Case内部事件顺序稳定
-    sort_columns = [
-        "case:concept:name"
-    ]
 
     if "time:timestamp" in df.columns:
         sort_columns.append(
@@ -278,62 +152,6 @@ def filter_test_log(
         "case:concept:name"
     ].nunique()
 
-    after_event = len(df)
-
-    trace_retention = (
-        after_trace
-        / max(before_trace, 1)
-    )
-
-    event_retention = (
-        after_event
-        / max(before_event, 1)
-    )
-
-    print("\n===== 测试日志活动投影 =====")
-
-    print(
-        f"投影前Trace数 : {before_trace}"
-    )
-
-    print(
-        f"投影后Trace数 : {after_trace}"
-    )
-
-    print(
-        f"Trace保留率   : "
-        f"{trace_retention:.4f}"
-    )
-
-    print(
-        f"投影前Event数 : {before_event}"
-    )
-
-    print(
-        f"投影后Event数 : {after_event}"
-    )
-
-    print(
-        f"Event保留率   : "
-        f"{event_retention:.4f}"
-    )
-
-    print(
-        f"删除活动类型数: "
-        f"{len(removed_activities)}"
-    )
-
-    if removed_activities:
-
-        print("测试日志中被删除的活动:")
-
-        print(removed_activities)
-
-    return pm4py.convert_to_event_log(
-        df
-    )
-
-
 # =====================================================
 # 评估指标
 # =====================================================
@@ -343,14 +161,7 @@ def build_evaluation_log(
         max_traces=MAX_EVAL_TRACES,
         seed=EVAL_SEED
 ):
-    """
-    固定随机种子抽取测试Trace。
 
-    Fitness和Precision必须使用同一个eval_log。
-    """
-
-    # 防止DataFrame直接进入list(log)，
-    # 否则得到的是列名而不是Trace
     log = ensure_event_log(log)
 
     all_traces = list(log)
@@ -360,56 +171,12 @@ def build_evaluation_log(
     if trace_count == 0:
 
         raise ValueError(
-            "测试日志不包含任何Trace"
         )
 
     sample_size = min(
         max_traces,
         trace_count
     )
-
-    if sample_size < trace_count:
-
-        rng = random.Random(seed)
-
-        sampled_traces = rng.sample(
-            all_traces,
-            sample_size
-        )
-
-        eval_log = EventLog(
-            sampled_traces
-        )
-
-        print(
-            "\n测试日志较大，使用固定随机样本:"
-        )
-
-        print(
-            f"原始Trace数 : {trace_count}"
-        )
-
-        print(
-            f"评估Trace数 : {sample_size}"
-        )
-
-        print(
-            f"随机种子    : {seed}"
-        )
-
-    else:
-
-        eval_log = EventLog(
-            all_traces
-        )
-
-        print(
-            "\n使用全部测试Trace进行评估:"
-        )
-
-        print(
-            f"评估Trace数 : {trace_count}"
-        )
 
     return eval_log
 
@@ -419,23 +186,11 @@ def evaluate_model(
         im,
         fm
 ):
-    """
-    Fitness和Precision在完全相同的eval_log上计算，
-    并统一使用Alignment方法。
-    """
 
     eval_log = build_evaluation_log(
         log=log,
         max_traces=MAX_EVAL_TRACES,
         seed=EVAL_SEED
-    )
-
-    # =====================================================
-    # Alignment-based Fitness
-    # =====================================================
-
-    print(
-        "\n开始计算Alignment Fitness..."
     )
 
     fitness_result = (
@@ -484,22 +239,12 @@ def evaluate_model(
         else:
 
             raise KeyError(
-                "无法从Fitness结果中提取指标。"
-                f"当前返回字段: "
                 f"{list(fitness_result.keys())}"
             )
 
     else:
 
         fitness = fitness_result
-
-    # =====================================================
-    # Alignment-based Precision
-    # =====================================================
-
-    print(
-        "\n开始计算Alignment Precision..."
-    )
 
     precision_result = (
         pm4py.precision_alignments(
@@ -538,8 +283,6 @@ def evaluate_model(
         else:
 
             raise KeyError(
-                "无法从Precision结果中提取指标。"
-                f"当前返回字段: "
                 f"{list(precision_result.keys())}"
             )
 
@@ -550,7 +293,6 @@ def evaluate_model(
     fitness = float(fitness)
     precision = float(precision)
 
-    # 防止异常返回值
     fitness = max(
         0.0,
         min(1.0, fitness)
@@ -604,23 +346,6 @@ def test_model():
 
     cfg = load_config()
 
-    keep_activities = cfg[
-        "keep_activities"
-    ]
-
-    print(
-        f"\n训练保留活动数: "
-        f"{len(keep_activities)}"
-    )
-
-    print(
-        "\n训练保留活动:"
-    )
-
-    print(
-        keep_activities
-    )
-
     # ---------------------------
     # 读取测试日志
     # ---------------------------
@@ -633,40 +358,9 @@ def test_model():
         TEST_XES
     )
 
-    # 关键修复：
-    # 无论read_xes返回DataFrame还是EventLog，
-    # 都统一转换成EventLog
     test_log = ensure_event_log(
         raw_test_log
     )
-
-    if FILTER_TEST_ACTIVITIES:
-
-        print(
-            "\n根据训练活动集合投影测试日志..."
-        )
-
-        test_log = filter_test_log(
-            test_log,
-            keep_activities
-        )
-
-        # filter_test_log返回后再次确保类型正确
-        test_log = ensure_event_log(
-            test_log
-        )
-
-    else:
-
-        print(
-            "\n不删除测试活动，"
-            "直接使用原始测试日志评估。"
-        )
-
-        print(
-            f"原始测试Trace数: "
-            f"{len(test_log)}"
-        )
 
     # ---------------------------
     # 读取PetriNet
