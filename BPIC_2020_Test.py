@@ -16,19 +16,6 @@ warnings.filterwarnings("ignore")
 
 EVAL_SEED = 99
 
-# Alignment计算较慢，最多抽取3000条Trace
-MAX_EVAL_TRACES = 3000
-
-# 推荐False：直接在原始测试日志上评估
-#
-# True：
-# 删除模型训练阶段未保留的活动。
-# 只有当所有对比方法使用完全相同的活动集合时才公平。
-#
-# False：
-# 不删除测试活动，未见活动作为偏差参与评估。
-FILTER_TEST_ACTIVITIES = True
-
 random.seed(EVAL_SEED)
 
 
@@ -61,13 +48,7 @@ CFG_FILE = os.path.join(
 # =====================================================
 
 def ensure_event_log(log):
-    """
-    将PM4Py读取结果统一转换成EventLog。
 
-    不同PM4Py版本的read_xes可能返回：
-    1. pandas.DataFrame
-    2. EventLog
-    """
 
     if isinstance(log, pd.DataFrame):
 
@@ -119,8 +100,6 @@ def ensure_event_log(log):
         )
 
     else:
-
-        # 对其他兼容日志类型做一次转换尝试
         try:
 
             event_log = (
@@ -135,9 +114,6 @@ def ensure_event_log(log):
             ) from exc
 
     if not isinstance(event_log, EventLog):
-
-        # 某些版本转换结果可能是兼容日志对象，
-        # 最终显式封装为EventLog
         event_log = EventLog(
             list(event_log)
         )
@@ -184,14 +160,6 @@ def filter_test_log(
         log,
         keep_activities
 ):
-    """
-    将测试日志投影到指定活动集合。
-
-    注意：
-    删除中间活动可能产生新的相邻关系。
-    只有所有对比方法使用相同活动集合时，
-    该评估方式才具有可比性。
-    """
 
     df = pm4py.convert_to_dataframe(log)
 
@@ -243,15 +211,6 @@ def filter_test_log(
         )
     ].copy()
 
-    if df.empty:
-
-        raise ValueError(
-            "活动过滤后测试日志为空。"
-            "请检查keep_activities或关闭"
-            "FILTER_TEST_ACTIVITIES。"
-        )
-
-    # 保证同一Case内部事件顺序稳定
     sort_columns = [
         "case:concept:name"
     ]
@@ -343,14 +302,7 @@ def build_evaluation_log(
         max_traces=MAX_EVAL_TRACES,
         seed=EVAL_SEED
 ):
-    """
-    固定随机种子抽取测试Trace。
 
-    Fitness和Precision必须使用同一个eval_log。
-    """
-
-    # 防止DataFrame直接进入list(log)，
-    # 否则得到的是列名而不是Trace
     log = ensure_event_log(log)
 
     all_traces = list(log)
@@ -419,10 +371,7 @@ def evaluate_model(
         im,
         fm
 ):
-    """
-    Fitness和Precision在完全相同的eval_log上计算，
-    并统一使用Alignment方法。
-    """
+
 
     eval_log = build_evaluation_log(
         log=log,
@@ -433,10 +382,6 @@ def evaluate_model(
     # =====================================================
     # Alignment-based Fitness
     # =====================================================
-
-    print(
-        "\n开始计算Alignment Fitness..."
-    )
 
     fitness_result = (
         pm4py.fitness_alignments(
@@ -496,10 +441,6 @@ def evaluate_model(
     # =====================================================
     # Alignment-based Precision
     # =====================================================
-
-    print(
-        "\n开始计算Alignment Precision..."
-    )
 
     precision_result = (
         pm4py.precision_alignments(
