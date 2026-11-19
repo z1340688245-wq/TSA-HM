@@ -57,7 +57,6 @@ def ensure_event_log(log):
         if missing_columns:
 
             raise ValueError(
-                "XES读取后的DataFrame缺少必要字段: "
                 f"{sorted(missing_columns)}"
             )
 
@@ -166,11 +165,6 @@ def build_evaluation_log(
 
     trace_count = len(all_traces)
 
-    if trace_count == 0:
-
-        raise ValueError(
-            "测试日志不包含任何Trace"
-        )
 
     sample_size = min(
         max_traces,
@@ -221,10 +215,6 @@ def evaluate_model(
         )
     )
 
-    print(
-        f"Fitness原始结果: "
-        f"{fitness_result}"
-    )
 
     if isinstance(
         fitness_result,
@@ -258,8 +248,6 @@ def evaluate_model(
         else:
 
             raise KeyError(
-                "无法从Fitness结果中提取指标。"
-                f"当前返回字段: "
                 f"{list(fitness_result.keys())}"
             )
 
@@ -277,10 +265,6 @@ def evaluate_model(
         )
     )
 
-    print(
-        f"Precision原始结果: "
-        f"{precision_result}"
-    )
 
     if isinstance(
         precision_result,
@@ -305,8 +289,6 @@ def evaluate_model(
         else:
 
             raise KeyError(
-                "无法从Precision结果中提取指标。"
-                f"当前返回字段: "
                 f"{list(precision_result.keys())}"
             )
 
