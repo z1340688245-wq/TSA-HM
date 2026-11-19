@@ -111,28 +111,6 @@ def load_config():
 
     return cfg
 
-    if "time:timestamp" in df.columns:
-        sort_columns.append(
-            "time:timestamp"
-        )
-
-    sort_columns.append(
-        "_original_event_order"
-    )
-
-    df = df.sort_values(
-        sort_columns,
-        kind="stable"
-    )
-
-    df = df.drop(
-        columns=["_original_event_order"]
-    )
-
-    return pm4py.convert_to_event_log(
-        df
-    )
-
 def build_evaluation_log(
         log,
         max_traces=MAX_EVAL_TRACES,
