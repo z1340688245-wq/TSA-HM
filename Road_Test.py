@@ -110,7 +110,6 @@ def load_config():
 
     return cfg
 
-
 def build_evaluation_log(
         log,
         max_traces=MAX_EVAL_TRACES,
