@@ -155,10 +155,6 @@ def evaluate_model(
         seed=EVAL_SEED
     )
 
-    print(
-        "\n开始计算Alignment Fitness..."
-    )
-
     fitness_result = (
         pm4py.fitness_alignments(
             eval_log,
