@@ -269,47 +269,6 @@ def build_evaluation_log(
         trace_count
     )
 
-    if sample_size < trace_count:
-
-        rng = random.Random(seed)
-
-        sampled_traces = rng.sample(
-            all_traces,
-            sample_size
-        )
-
-        eval_log = EventLog(
-            sampled_traces
-        )
-
-        print(
-            f"原始Trace数 : {trace_count}"
-        )
-
-        print(
-            f"评估Trace数 : {sample_size}"
-        )
-
-        print(
-            f"随机种子    : {seed}"
-        )
-
-    else:
-
-        eval_log = EventLog(
-            all_traces
-        )
-
-        print(
-            "\n使用全部测试Trace进行评估:"
-        )
-
-        print(
-            f"评估Trace数 : {trace_count}"
-        )
-
-    return eval_log
-
 def evaluate_model(
         log,
         net,
@@ -334,7 +293,6 @@ def evaluate_model(
     )
 
     print(
-        f"Fitness原始结果: "
         f"{fitness_result}"
     )
 
@@ -389,7 +347,6 @@ def evaluate_model(
     )
 
     print(
-        f"Precision原始结果: "
         f"{precision_result}"
     )
 
@@ -428,7 +385,6 @@ def evaluate_model(
     fitness = float(fitness)
     precision = float(precision)
 
-    # 防止异常返回值
     fitness = max(
         0.0,
         min(1.0, fitness)
@@ -481,23 +437,6 @@ def test_model():
     # ---------------------------
 
     cfg = load_config()
-
-    keep_activities = cfg[
-        "keep_activities"
-    ]
-
-    print(
-        f"\n训练保留活动数: "
-        f"{len(keep_activities)}"
-    )
-
-    print(
-        "\n训练保留活动:"
-    )
-
-    print(
-        keep_activities
-    )
 
     # ---------------------------
     # 读取测试日志
