@@ -139,55 +139,6 @@ def load_config():
 
     return cfg
 
-# =====================================================
-# 活动过滤
-# =====================================================
-
-def filter_test_log(
-        log,
-        keep_activities
-):
-
-
-    df = pm4py.convert_to_dataframe(log)
-
-    required_columns = {
-        "case:concept:name",
-        "concept:name"
-    }
-
-    missing_columns = (
-        required_columns
-        - set(df.columns)
-    )
-
-    if missing_columns:
-
-        raise ValueError(
-            "测试日志缺少必要字段: "
-            f"{sorted(missing_columns)}"
-        )
-
-    before_trace = df[
-        "case:concept:name"
-    ].nunique()
-
-    before_event = len(df)
-
-    before_activities = set(
-        df["concept:name"].unique()
-    )
-
-    keep_activities = set(
-        keep_activities
-    )
-
-    removed_activities = sorted(
-        before_activities
-        - keep_activities
-    )
-
-    # 保存原始事件顺序
     df["_original_event_order"] = range(
         len(df)
     )
