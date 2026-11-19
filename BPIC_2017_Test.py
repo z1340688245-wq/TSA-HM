@@ -67,17 +67,6 @@ def ensure_event_log(log):
             "case:concept:name"
         ].nunique()
 
-        print(
-            "\nread_xes返回类型: pandas.DataFrame"
-        )
-
-        print(
-            f"DataFrame事件数: {event_count}"
-        )
-
-        print(
-            f"DataFrame Trace数: {trace_count}"
-        )
 
         event_log = (
             pm4py.convert_to_event_log(log)
@@ -101,7 +90,6 @@ def ensure_event_log(log):
         except Exception as exc:
 
             raise TypeError(
-                "无法将测试日志转换为EventLog。"
                 f"当前类型: {type(log)}"
             ) from exc
 
@@ -133,53 +121,6 @@ def load_config():
         cfg = json.load(f)
 
     return cfg
-
-# =====================================================
-# 活动过滤
-# =====================================================
-
-def filter_test_log(
-        log,
-        keep_activities
-):
-
-
-    df = pm4py.convert_to_dataframe(log)
-
-    required_columns = {
-        "case:concept:name",
-        "concept:name"
-    }
-
-    missing_columns = (
-        required_columns
-        - set(df.columns)
-    )
-
-    if missing_columns:
-
-        raise ValueError(
-            f"{sorted(missing_columns)}"
-        )
-
-    before_trace = df[
-        "case:concept:name"
-    ].nunique()
-
-    before_event = len(df)
-
-    before_activities = set(
-        df["concept:name"].unique()
-    )
-
-    keep_activities = set(
-        keep_activities
-    )
-
-    removed_activities = sorted(
-        before_activities
-        - keep_activities
-    )
 
     df["_original_event_order"] = range(
         len(df)
