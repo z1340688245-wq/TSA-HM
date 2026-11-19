@@ -202,10 +202,6 @@ def evaluate_model(
         )
     )
 
-    print(
-        f"Fitness原始结果: "
-        f"{fitness_result}"
-    )
 
     if isinstance(
         fitness_result,
@@ -255,10 +251,6 @@ def evaluate_model(
         )
     )
 
-    print(
-        f"Precision原始结果: "
-        f"{precision_result}"
-    )
 
     if isinstance(
         precision_result,
