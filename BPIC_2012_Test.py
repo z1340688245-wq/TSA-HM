@@ -15,20 +15,6 @@ warnings.filterwarnings("ignore")
 # =====================================================
 
 EVAL_SEED = 99
-
-# Alignment计算较慢，最多抽取3000条Trace
-MAX_EVAL_TRACES = 10000
-
-# 推荐False：直接在原始测试日志上评估
-#
-# True：
-# 删除模型训练阶段未保留的活动。
-# 只有当所有对比方法使用完全相同的活动集合时才公平。
-#
-# False：
-# 不删除测试活动，未见活动作为偏差参与评估。
-FILTER_TEST_ACTIVITIES = True
-
 random.seed(EVAL_SEED)
 
 
@@ -184,14 +170,7 @@ def filter_test_log(
         log,
         keep_activities
 ):
-    """
-    将测试日志投影到指定活动集合。
 
-    注意：
-    删除中间活动可能产生新的相邻关系。
-    只有所有对比方法使用相同活动集合时，
-    该评估方式才具有可比性。
-    """
 
     df = pm4py.convert_to_dataframe(log)
 
@@ -343,14 +322,9 @@ def build_evaluation_log(
         max_traces=MAX_EVAL_TRACES,
         seed=EVAL_SEED
 ):
-    """
-    固定随机种子抽取测试Trace。
 
-    Fitness和Precision必须使用同一个eval_log。
-    """
 
-    # 防止DataFrame直接进入list(log)，
-    # 否则得到的是列名而不是Trace
+   
     log = ensure_event_log(log)
 
     all_traces = list(log)
@@ -379,10 +353,6 @@ def build_evaluation_log(
 
         eval_log = EventLog(
             sampled_traces
-        )
-
-        print(
-            "\n测试日志较大，使用固定随机样本:"
         )
 
         print(
@@ -419,10 +389,6 @@ def evaluate_model(
         im,
         fm
 ):
-    """
-    Fitness和Precision在完全相同的eval_log上计算，
-    并统一使用Token方法。
-    """
 
     eval_log = build_evaluation_log(
         log=log,
@@ -434,9 +400,6 @@ def evaluate_model(
     # Token-based Fitness
     # =====================================================
 
-    print(
-        "\n开始计算Token Fitness..."
-    )
 
     fitness_result = (
         pm4py.fitness_token_based_replay(
@@ -496,10 +459,6 @@ def evaluate_model(
     # =====================================================
     # Token-based Precision
     # =====================================================
-
-    print(
-        "\n开始计算Token Precision..."
-    )
 
     precision_result = (
         pm4py.precision_token_based_replay(
