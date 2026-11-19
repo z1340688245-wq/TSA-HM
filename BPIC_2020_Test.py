@@ -135,23 +135,6 @@ def load_config():
         columns=["_original_event_order"]
     )
 
-    after_trace = df[
-        "case:concept:name"
-    ].nunique()
-
-    after_event = len(df)
-
-    trace_retention = (
-        after_trace
-        / max(before_trace, 1)
-    )
-
-    event_retention = (
-        after_event
-        / max(before_event, 1)
-    )
-
-
 def build_evaluation_log(
         log,
         max_traces=MAX_EVAL_TRACES,
@@ -264,11 +247,6 @@ def evaluate_model(
             im,
             fm
         )
-    )
-
-    print(
-        f"Precision原始结果: "
-        f"{precision_result}"
     )
 
     if isinstance(
