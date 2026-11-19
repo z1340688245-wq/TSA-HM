@@ -61,7 +61,6 @@ def ensure_event_log(log):
         if missing_columns:
 
             raise ValueError(
-                "XES读取后的DataFrame缺少必要字段: "
                 f"{sorted(missing_columns)}"
             )
 
@@ -71,18 +70,7 @@ def ensure_event_log(log):
             "case:concept:name"
         ].nunique()
 
-        print(
-            "\nread_xes返回类型: pandas.DataFrame"
-        )
-
-        print(
-            f"DataFrame事件数: {event_count}"
-        )
-
-        print(
-            f"DataFrame Trace数: {trace_count}"
-        )
-
+    
         event_log = (
             pm4py.convert_to_event_log(log)
         )
@@ -138,43 +126,6 @@ def load_config():
         cfg = json.load(f)
 
     return cfg
-
-    df["_original_event_order"] = range(
-        len(df)
-    )
-    
-    df = df[
-        df["concept:name"].isin(
-            keep_activities
-        )
-    ].copy()
-
-    sort_columns = [
-        "case:concept:name"
-    ]
-
-    if "time:timestamp" in df.columns:
-        sort_columns.append(
-            "time:timestamp"
-        )
-
-    sort_columns.append(
-        "_original_event_order"
-    )
-
-    df = df.sort_values(
-        sort_columns,
-        kind="stable"
-    )
-
-    df = df.drop(
-        columns=["_original_event_order"]
-    )
-
-    return pm4py.convert_to_event_log(
-        df
-    )
-
 
 # =====================================================
 # 评估指标
