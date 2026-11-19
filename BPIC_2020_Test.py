@@ -10,10 +10,6 @@ from pm4py.objects.log.obj import EventLog
 
 warnings.filterwarnings("ignore")
 
-# =====================================================
-# 测试参数
-# =====================================================
-
 EVAL_SEED = 99
 
 random.seed(EVAL_SEED)
@@ -43,9 +39,7 @@ CFG_FILE = os.path.join(
     "train_config.json"
 )
 
-# =====================================================
-# 统一转换为EventLog
-# =====================================================
+
 
 def ensure_event_log(log):
 
@@ -75,18 +69,6 @@ def ensure_event_log(log):
             "case:concept:name"
         ].nunique()
 
-        print(
-            "\nread_xes返回类型: pandas.DataFrame"
-        )
-
-        print(
-            f"DataFrame事件数: {event_count}"
-        )
-
-        print(
-            f"DataFrame Trace数: {trace_count}"
-        )
-
         event_log = (
             pm4py.convert_to_event_log(log)
         )
@@ -109,7 +91,6 @@ def ensure_event_log(log):
         except Exception as exc:
 
             raise TypeError(
-                "无法将测试日志转换为EventLog。"
                 f"当前类型: {type(log)}"
             ) from exc
 
@@ -121,11 +102,9 @@ def ensure_event_log(log):
     if len(event_log) == 0:
 
         raise ValueError(
-            "转换后的测试日志为空"
         )
 
     print(
-        f"转换后EventLog Trace数: "
         f"{len(event_log)}"
     )
 
