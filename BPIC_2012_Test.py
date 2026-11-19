@@ -42,9 +42,6 @@ CFG_FILE = os.path.join(
     "train_config.json"
 )
 
-# =====================================================
-# 统一转换为EventLog
-# =====================================================
 
 def ensure_event_log(log):
 
@@ -100,7 +97,6 @@ def ensure_event_log(log):
 
     else:
 
-        # 对其他兼容日志类型做一次转换尝试
         try:
 
             event_log = (
@@ -110,7 +106,6 @@ def ensure_event_log(log):
         except Exception as exc:
 
             raise TypeError(
-                "无法将测试日志转换为EventLog。"
                 f"当前类型: {type(log)}"
             ) from exc
 
@@ -120,17 +115,6 @@ def ensure_event_log(log):
         event_log = EventLog(
             list(event_log)
         )
-
-    if len(event_log) == 0:
-
-        raise ValueError(
-            "转换后的测试日志为空"
-        )
-
-    print(
-        f"转换后EventLog Trace数: "
-        f"{len(event_log)}"
-    )
 
     return event_log
 
@@ -207,23 +191,13 @@ def filter_test_log(
     df["_original_event_order"] = range(
         len(df)
     )
-
-    # 仅保留训练阶段允许的活动
+    
     df = df[
         df["concept:name"].isin(
             keep_activities
         )
     ].copy()
 
-    if df.empty:
-
-        raise ValueError(
-            "活动过滤后测试日志为空。"
-            "请检查keep_activities或关闭"
-            "FILTER_TEST_ACTIVITIES。"
-        )
-
-    # 保证同一Case内部事件顺序稳定
     sort_columns = [
         "case:concept:name"
     ]
@@ -262,45 +236,6 @@ def filter_test_log(
         / max(before_event, 1)
     )
 
-    print("\n===== 测试日志活动投影 =====")
-
-    print(
-        f"投影前Trace数 : {before_trace}"
-    )
-
-    print(
-        f"投影后Trace数 : {after_trace}"
-    )
-
-    print(
-        f"Trace保留率   : "
-        f"{trace_retention:.4f}"
-    )
-
-    print(
-        f"投影前Event数 : {before_event}"
-    )
-
-    print(
-        f"投影后Event数 : {after_event}"
-    )
-
-    print(
-        f"Event保留率   : "
-        f"{event_retention:.4f}"
-    )
-
-    print(
-        f"删除活动类型数: "
-        f"{len(removed_activities)}"
-    )
-
-    if removed_activities:
-
-        print("测试日志中被删除的活动:")
-
-        print(removed_activities)
-
     return pm4py.convert_to_event_log(
         df
     )
@@ -315,7 +250,6 @@ def build_evaluation_log(
         max_traces=MAX_EVAL_TRACES,
         seed=EVAL_SEED
 ):
-
 
    
     log = ensure_event_log(log)
@@ -389,13 +323,9 @@ def evaluate_model(
         seed=EVAL_SEED
     )
 
-    # =====================================================
-    # Token-based Fitness
-    # =====================================================
-
 
     fitness_result = (
-        pm4py.fitness_token_based_replay(
+        pm4py.fitness__alignments(
             eval_log,
             net,
             im,
@@ -449,12 +379,8 @@ def evaluate_model(
 
         fitness = fitness_result
 
-    # =====================================================
-    # Token-based Precision
-    # =====================================================
-
     precision_result = (
-        pm4py.precision_token_based_replay(
+        pm4py.precision__alignments(
             eval_log,
             net,
             im,
@@ -585,40 +511,9 @@ def test_model():
         TEST_XES
     )
 
-    # 关键修复：
-    # 无论read_xes返回DataFrame还是EventLog，
-    # 都统一转换成EventLog
     test_log = ensure_event_log(
         raw_test_log
     )
-
-    if FILTER_TEST_ACTIVITIES:
-
-        print(
-            "\n根据训练活动集合投影测试日志..."
-        )
-
-        test_log = filter_test_log(
-            test_log,
-            keep_activities
-        )
-
-        # filter_test_log返回后再次确保类型正确
-        test_log = ensure_event_log(
-            test_log
-        )
-
-    else:
-
-        print(
-            "\n不删除测试活动，"
-            "直接使用原始测试日志评估。"
-        )
-
-        print(
-            f"原始测试Trace数: "
-            f"{len(test_log)}"
-        )
 
     # ---------------------------
     # 读取PetriNet
