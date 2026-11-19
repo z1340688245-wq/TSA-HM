@@ -121,37 +121,6 @@ def load_config():
 
     return cfg
 
-    df["_original_event_order"] = range(
-        len(df)
-    )
-
-    sort_columns = [
-        "case:concept:name"
-    ]
-
-    if "time:timestamp" in df.columns:
-        sort_columns.append(
-            "time:timestamp"
-        )
-
-    sort_columns.append(
-        "_original_event_order"
-    )
-
-    df = df.sort_values(
-        sort_columns,
-        kind="stable"
-    )
-
-    df = df.drop(
-        columns=["_original_event_order"]
-    )
-
-    event_retention = (
-        after_event
-        / max(before_event, 1)
-    )
-
 
 def build_evaluation_log(
         log,
