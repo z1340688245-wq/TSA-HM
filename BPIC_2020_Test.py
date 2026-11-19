@@ -130,10 +130,6 @@ def load_config():
 
     return cfg
 
-    df = df.drop(
-        columns=["_original_event_order"]
-    )
-
 def build_evaluation_log(
         log,
         max_traces=MAX_EVAL_TRACES,
