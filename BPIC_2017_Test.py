@@ -4,7 +4,6 @@ import pm4py
 import warnings
 import random
 import pandas as pd
-
 from pm4py.objects.log.obj import EventLog
 
 
