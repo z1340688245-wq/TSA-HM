@@ -47,13 +47,7 @@ CFG_FILE = os.path.join(
 # =====================================================
 
 def ensure_event_log(log):
-    """
-    将PM4Py读取结果统一转换成EventLog。
 
-    不同PM4Py版本的read_xes可能返回：
-    1. pandas.DataFrame
-    2. EventLog
-    """
 
     if isinstance(log, pd.DataFrame):
 
@@ -122,8 +116,7 @@ def ensure_event_log(log):
 
     if not isinstance(event_log, EventLog):
 
-        # 某些版本转换结果可能是兼容日志对象，
-        # 最终显式封装为EventLog
+  
         event_log = EventLog(
             list(event_log)
         )
