@@ -10,10 +10,6 @@ from pm4py.objects.log.obj import EventLog
 
 warnings.filterwarnings("ignore")
 
-# =====================================================
-# 测试参数
-# =====================================================
-
 EVAL_SEED = 99
 
 random.seed(EVAL_SEED)
@@ -43,18 +39,9 @@ CFG_FILE = os.path.join(
     "train_config.json"
 )
 
-# =====================================================
-# 统一转换为EventLog
-# =====================================================
+
 
 def ensure_event_log(log):
-    """
-    将PM4Py读取结果统一转换成EventLog。
-
-    不同PM4Py版本的read_xes可能返回：
-    1. pandas.DataFrame
-    2. EventLog
-    """
 
     if isinstance(log, pd.DataFrame):
 
@@ -106,8 +93,6 @@ def ensure_event_log(log):
         )
 
     else:
-
-        # 对其他兼容日志类型做一次转换尝试
         try:
 
             event_log = (
@@ -123,22 +108,9 @@ def ensure_event_log(log):
 
     if not isinstance(event_log, EventLog):
 
-        # 某些版本转换结果可能是兼容日志对象，
-        # 最终显式封装为EventLog
         event_log = EventLog(
             list(event_log)
         )
-
-    if len(event_log) == 0:
-
-        raise ValueError(
-            "转换后的测试日志为空"
-        )
-
-    print(
-        f"转换后EventLog Trace数: "
-        f"{len(event_log)}"
-    )
 
     return event_log
 
@@ -188,7 +160,6 @@ def filter_test_log(
     if missing_columns:
 
         raise ValueError(
-            "测试日志缺少必要字段: "
             f"{sorted(missing_columns)}"
         )
 
@@ -211,27 +182,10 @@ def filter_test_log(
         - keep_activities
     )
 
-    # 保存原始事件顺序
     df["_original_event_order"] = range(
         len(df)
     )
 
-    # 仅保留训练阶段允许的活动
-    df = df[
-        df["concept:name"].isin(
-            keep_activities
-        )
-    ].copy()
-
-    if df.empty:
-
-        raise ValueError(
-            "活动过滤后测试日志为空。"
-            "请检查keep_activities或关闭"
-            "FILTER_TEST_ACTIVITIES。"
-        )
-
-    # 保证同一Case内部事件顺序稳定
     sort_columns = [
         "case:concept:name"
     ]
@@ -270,53 +224,6 @@ def filter_test_log(
         / max(before_event, 1)
     )
 
-    print("\n===== 测试日志活动投影 =====")
-
-    print(
-        f"投影前Trace数 : {before_trace}"
-    )
-
-    print(
-        f"投影后Trace数 : {after_trace}"
-    )
-
-    print(
-        f"Trace保留率   : "
-        f"{trace_retention:.4f}"
-    )
-
-    print(
-        f"投影前Event数 : {before_event}"
-    )
-
-    print(
-        f"投影后Event数 : {after_event}"
-    )
-
-    print(
-        f"Event保留率   : "
-        f"{event_retention:.4f}"
-    )
-
-    print(
-        f"删除活动类型数: "
-        f"{len(removed_activities)}"
-    )
-
-    if removed_activities:
-
-        print("测试日志中被删除的活动:")
-
-        print(removed_activities)
-
-    return pm4py.convert_to_event_log(
-        df
-    )
-
-
-# =====================================================
-# 评估指标
-# =====================================================
 
 def build_evaluation_log(
         log,
@@ -354,34 +261,9 @@ def build_evaluation_log(
             sampled_traces
         )
 
-        print(
-            "\n测试日志较大，使用固定随机样本:"
-        )
-
-        print(
-            f"原始Trace数 : {trace_count}"
-        )
-
-        print(
-            f"评估Trace数 : {sample_size}"
-        )
-
-        print(
-            f"随机种子    : {seed}"
-        )
-
     else:
-
         eval_log = EventLog(
             all_traces
-        )
-
-        print(
-            "\n使用全部测试Trace进行评估:"
-        )
-
-        print(
-            f"评估Trace数 : {trace_count}"
         )
 
     return eval_log
@@ -401,13 +283,8 @@ def evaluate_model(
     )
 
 
-
-    print(
-        "\n开始计算Token Fitness..."
-    )
-
     fitness_result = (
-        pm4py.fitness_token_based_replay(
+        pm4py.fitness__alignments(
             eval_log,
             net,
             im,
@@ -462,12 +339,8 @@ def evaluate_model(
         fitness = fitness_result
 
 
-    print(
-        "\n开始计算Token Precision..."
-    )
-
     precision_result = (
-        pm4py.precision_token_based_replay(
+        pm4py.precision_alignments(
             eval_log,
             net,
             im,
@@ -514,8 +387,6 @@ def evaluate_model(
 
     fitness = float(fitness)
     precision = float(precision)
-
-    # 防止异常返回值
     fitness = max(
         0.0,
         min(1.0, fitness)
@@ -573,19 +444,6 @@ def test_model():
         "keep_activities"
     ]
 
-    print(
-        f"\n训练保留活动数: "
-        f"{len(keep_activities)}"
-    )
-
-    print(
-        "\n训练保留活动:"
-    )
-
-    print(
-        keep_activities
-    )
-
     # ---------------------------
     # 读取测试日志
     # ---------------------------
@@ -602,33 +460,6 @@ def test_model():
         raw_test_log
     )
 
-    if FILTER_TEST_ACTIVITIES:
-
-        print(
-            "\n根据训练活动集合投影测试日志..."
-        )
-
-        test_log = filter_test_log(
-            test_log,
-            keep_activities
-        )
-
-        # filter_test_log返回后再次确保类型正确
-        test_log = ensure_event_log(
-            test_log
-        )
-
-    else:
-
-        print(
-            "\n不删除测试活动，"
-            "直接使用原始测试日志评估。"
-        )
-
-        print(
-            f"原始测试Trace数: "
-            f"{len(test_log)}"
-        )
 
     # ---------------------------
     # 读取PetriNet
@@ -755,10 +586,6 @@ def test_model():
     print(
         f"\n结果已保存:\n{result_file}"
     )
-
-# =====================================================
-# RUN
-# =====================================================
 
 if __name__ == "__main__":
 
