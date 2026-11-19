@@ -59,7 +59,6 @@ def ensure_event_log(log):
         if missing_columns:
 
             raise ValueError(
-                "XES读取后的DataFrame缺少必要字段: "
                 f"{sorted(missing_columns)}"
             )
 
@@ -195,10 +194,6 @@ def evaluate_model(
         )
     )
 
-    print(
-        f"Fitness原始结果: "
-        f"{fitness_result}"
-    )
 
     if isinstance(
         fitness_result,
