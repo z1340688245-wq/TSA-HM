@@ -61,7 +61,6 @@ def ensure_event_log(log):
         if missing_columns:
 
             raise ValueError(
-                "XES读取后的DataFrame缺少必要字段: "
                 f"{sorted(missing_columns)}"
             )
 
@@ -94,8 +93,6 @@ def ensure_event_log(log):
         except Exception as exc:
 
             raise TypeError(
-                "无法将测试日志转换为EventLog。"
-                f"当前类型: {type(log)}"
             ) from exc
 
     if not isinstance(event_log, EventLog):
@@ -125,32 +122,6 @@ def load_config():
         cfg = json.load(f)
 
     return cfg
-
-    df["_original_event_order"] = range(
-        len(df)
-    )
-
-    if "time:timestamp" in df.columns:
-        sort_columns.append(
-            "time:timestamp"
-        )
-
-    sort_columns.append(
-        "_original_event_order"
-    )
-
-    df = df.sort_values(
-        sort_columns,
-        kind="stable"
-    )
-
-    df = df.drop(
-        columns=["_original_event_order"]
-    )
-
-    after_trace = df[
-        "case:concept:name"
-    ].nunique()
 
 # =====================================================
 # 评估指标
