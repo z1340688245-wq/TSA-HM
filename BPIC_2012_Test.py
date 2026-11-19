@@ -263,8 +263,6 @@ def evaluate_model(
         else:
 
             raise KeyError(
-                "无法从Fitness结果中提取指标。"
-                f"当前返回字段: "
                 f"{list(fitness_result.keys())}"
             )
 
@@ -308,8 +306,6 @@ def evaluate_model(
         else:
 
             raise KeyError(
-                "无法从Precision结果中提取指标。"
-                f"当前返回字段: "
                 f"{list(precision_result.keys())}"
             )
 
